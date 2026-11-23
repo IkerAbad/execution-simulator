@@ -86,6 +86,11 @@ def test_price_of_risk_rejects_a_zero_budget(problem: ExecutionProblem) -> None:
         lambda_for_cost_increase(problem, 0.0)
 
 
+def test_price_of_risk_rejects_an_unreachable_budget(problem: ExecutionProblem) -> None:
+    with pytest.raises(ValueError, match="beyond the frontier"):
+        lambda_for_cost_increase(problem, 10_000.0)
+
+
 def test_default_grid_starts_at_zero_and_is_sorted(problem: ExecutionProblem) -> None:
     grid = default_risk_aversions(problem)
     assert grid[0] == 0.0

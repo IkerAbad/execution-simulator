@@ -16,6 +16,7 @@ from execution_sim.almgren_chriss import (
 )
 from execution_sim.core import ExecutionProblem
 from execution_sim.impact import cost_sd, expected_cost, to_bps
+from execution_sim.schedules import twap
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,10 +90,17 @@ def lambda_for_cost_increase(
     """
     if extra_bps <= 0.0:
         raise ValueError(f"extra_bps must be positive, got {extra_bps!r}")
-    baseline = expected_cost(problem, _twap(problem))
+    baseline = expected_cost(problem, twap(problem))
     target = baseline + extra_bps * problem.notional * 1e-4
     low = 1e-12
     high = 1.0
+    reachable = expected_cost(problem, optimal_trades(problem, high)) - baseline
+    if reachable < extra_bps * problem.notional * 1e-4:
+        raise ValueError(
+            f"a {extra_bps:g} bp cost increase is beyond the frontier: the most "
+            f"aggressive schedule only reaches {to_bps(problem, reachable):.2f} bp "
+            "above TWAP before the whole order goes in the first interval"
+        )
     for _ in range(max_iterations):
         middle = math.sqrt(low * high)
         value = expected_cost(problem, optimal_trades(problem, middle))
@@ -104,9 +112,3 @@ def lambda_for_cost_increase(
             break
     candidate = math.sqrt(low * high)
     return point(problem, candidate)
-
-
-def _twap(problem: ExecutionProblem) -> FloatArray:
-    from execution_sim.schedules import twap
-
-    return twap(problem)

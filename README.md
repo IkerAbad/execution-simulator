@@ -9,9 +9,9 @@ VWAP, POV and the Almgren-Chriss optimal schedule under an explicit impact model
 against a finite-depth order book, and measures the **total cost of the order**, not
 its average price.
 
-The point of the project is the last word: two schedules can show the same average
-execution price and very different total cost once impact, spread and the risk of
-holding the position are accounted for.
+The point is the last two words: two schedules can show the same average execution
+price and very different total cost once impact, spread and the risk of holding the
+position are accounted for.
 
 ## What is modelled
 
@@ -45,7 +45,8 @@ execution models agree at the size the analytics are meant to describe.
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate          # Windows
+.venv\Scripts\activate            # Windows
+source .venv/bin/activate         # macOS / Linux
 pip install -e ".[dev]"
 python -m execution_sim compare
 ```
