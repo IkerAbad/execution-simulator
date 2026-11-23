@@ -41,6 +41,11 @@ notional), one trading day in 20 intervals, 2% daily volatility, and a book with
 calibrated to reproduce the book's slippage at the average child order, so the two
 execution models agree at the size the analytics are meant to describe.
 
+The book can be static (restored every interval, `refill = 1`) or depleting
+(`refill < 1`), and a child order larger than the visible ladder is priced by
+extrapolating the ladder past its deepest level. Both modes are compared below with
+the same market parameters.
+
 ## Quick start
 
 ```bash
@@ -98,7 +103,7 @@ mean-variance objective; every other row pays an excess of between 0.44 and 25 b
 risk-adjusted cost. Note that the optimal schedule does **not** have the lowest
 expected cost: it trades expected cost for a large reduction in dispersion.
 
-![Cost, risk, inventory and book slippage](figures/cost_risk_inventory.png)
+![Cost, risk, inventory and book slippage](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/cost_risk_inventory.png)
 
 ## TWAP is not optimal
 
@@ -141,7 +146,7 @@ of risk reduction**, moving the standard deviation from 111.1 bp to 71.3 bp. Tha
 0.025 bp of expected cost per bp of standard deviation. Ignoring risk is cheap only
 if you never look at the second moment.
 
-![Efficient frontier](figures/efficient_frontier.png)
+![Efficient frontier](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/efficient_frontier.png)
 
 ## Finite liquidity
 
@@ -156,6 +161,90 @@ That is the difference between "average price" and "total cost": the same volume
 traded in three child orders instead of one is cheaper by a factor that the average
 price of the parent order does not show.
 
+## Does the book refill?
+
+Everything above assumes that the ladder is restored between intervals. That is the
+optimistic extreme. The simulator also runs a **depleting book**: after each child
+order only a fraction `refill` of the missing depth comes back, so a large order eats
+the liquidity it needs and pays for it later.
+
+With `refill = 0.25` (a quarter of the gap per interval), the same five schedules
+cost:
+
+| Algorithm | Static book (bp) | Running book (bp) | Change | Max child / depth | Min depth left |
+|---|---|---|---|---|---|
+| Immediate | 61.065 | 61.065 | 0.0% | 52.6% | 47.4% |
+| TWAP | 4.508 | 11.317 | +151.0% | 2.9% | 89.5% |
+| VWAP | 4.686 | 11.332 | +141.8% | 4.5% | 87.4% |
+| POV | 5.640 | 13.794 | +144.6% | 6.2% | 85.9% |
+| Almgren-Chriss | 6.542 | 14.743 | +125.4% | 8.8% | 82.5% |
+
+Costs rise by 125% to 151%. More interesting than the level is the structure, and it
+shows up at the limit.
+
+### With no replenishment, slicing buys nothing
+
+Set `refill = 0` and the ladder never comes back. The temporary cost of the five
+schedules then becomes **identical to machine precision** (4·10⁻¹¹ bp between them):
+a static ladder has no memory, so the cost of buying 100,000 shares in twenty pieces
+is exactly the cost of buying them in one, and only the discrete permanent-impact
+term differs. The whole benefit of slicing comes from the book refilling.
+
+![The book does not refill for free](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/book_dynamics.png)
+
+The consequence for the mean-variance objective is blunt. At the model's risk
+aversion, the advantage of the Almgren-Chriss schedule over TWAP falls from **17.6%**
+in the static book to **2.8%** at `refill = 0.25` and **2.7%** at `refill = 0.20`:
+the cost of speed rises while the risk penalty stays the same, so front-loading pays
+much less. At `refill = 0` immediate execution wins outright (61.07 bp of objective
+against 65.14 for AC and 69.14 for TWAP), because impact is path independent and the
+block carries no risk at all.
+
+Two honest qualifications:
+
+* TWAP remains the worst of the *sliced* schedules at every refill level in the
+  sweep. What collapses with a depleting book is the case for slicing at all, not
+  the case against TWAP.
+* Between `refill = 0.3` and `refill = 0.7` the **POV schedule beats the AC one** by
+  up to 0.13 bp (1.0% of the objective). The AC schedule minimises the linear model's
+  objective, not the running book's, so this is the model risk of optimising against
+  the wrong liquidity model, and it is published rather than hidden.
+
+## Extreme case: a child order larger than half the visible depth
+
+A 250,000-share order (2.5 times the reference order, 131% of the visible ladder)
+completed in four intervals, with `refill = 0.25`:
+
+| Algorithm | Max child / depth | Beyond the visible book | Static (bp) | Running (bp) | Change |
+|---|---|---|---|---|---|
+| Immediate | 131.4% | 23.9% | 415.81 | 415.81 | 0.0% |
+| TWAP | 76.4% | 0.0% | 38.72 | 119.42 | +208.4% |
+| VWAP | 81.7% | 0.0% | 41.59 | 118.57 | +185.1% |
+| POV | 87.3% | 0.0% | 58.52 | 139.08 | +137.6% |
+| Almgren-Chriss | 84.0% | 0.0% | 87.20 | 129.95 | +49.0% |
+
+What happens to each one:
+
+* **Immediate** empties the ladder in the first interval: 190,192 shares of visible
+  depth, 59,808 shares (23.9% of the order) priced by extrapolating the ladder past
+  its deepest level. Cost: 415.8 bp, unchanged by the refill parameter, because a
+  single block has no second interval to be penalised in.
+* **TWAP** never goes past the last level, but ends the day with 10% of the ladder
+  left and pays 119.4 bp instead of 38.7 bp: the same schedule, three times the cost.
+* **VWAP** is the cheapest of the sliced schedules in this stress (118.6 bp): its
+  profile puts 31% of the order in the first interval, when the book is still full,
+  and only 19% in the middle of the horizon, when it is thin.
+* **POV** finishes the day with 4.8% of the ladder and pays 139.1 bp.
+* **Almgren-Chriss** front-loads, uses the cheap levels early and then trades little,
+  so it is the least damaged in relative terms (+49%), although its absolute cost is
+  not the lowest: it is no longer the optimum of this model.
+
+The book never refuses to trade: past the deepest visible level it continues at the
+same tick spacing with the size of the deepest level, and the fraction priced that
+way is reported. A strict mode (`LevelBook.walk(..., extrapolate=False)`) raises
+`InsufficientDepthError` instead, which is what a venue would do.
+
+
 ## Sensitivity
 
 Temporary impact is the parameter that punishes immediacy: multiplying `η` by four
@@ -167,9 +256,9 @@ Volatility shifts the whole frontier to the right without changing its shape. A 
 that the optimiser ignores moves the ranking: with a rising price the slow schedules
 gain, because waiting is rewarded, and the expected-cost ordering inverts.
 
-![Sensitivity to impact and drift](figures/sensitivity_impact.png)
-![Sensitivity to volatility](figures/sensitivity_volatility.png)
-![Sensitivity to risk aversion](figures/risk_aversion.png)
+![Sensitivity to impact and drift](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/sensitivity_impact.png)
+![Sensitivity to volatility](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/sensitivity_volatility.png)
+![Sensitivity to risk aversion](https://raw.githubusercontent.com/IkerAbad/execution-simulator/main/figures/risk_aversion.png)
 
 ## How the optimum is obtained
 
@@ -207,6 +296,13 @@ Both routes are implemented and must agree. See
 * **The book.** Level consumption is tested exactly, the calibrated small-order
   slippage matches the linear model at the touch, and the cost function is checked to
   be convex in the child order size.
+* **The running book.** `tests/test_liquidity.py` checks that `refill = 1` reproduces
+  the static book to 10⁻¹², that the variance is unchanged by depletion (the book is
+  deterministic), that the simulated mean matches `expected_execution_cost(..., book,
+  liquidity)` within five standard errors for all five schedules at `refill = 0.25`,
+  and that the temporary cost is path independent at `refill = 0`. The analytic
+  validation of the Almgren-Chriss solution is untouched by all of this: it runs on
+  the linear model, where the closed form is exact.
 
 `ruff`, `mypy --strict` and `pytest` run in CI on every push, together with a job that
 regenerates the report and the figures and uploads them as artifacts.
@@ -219,7 +315,7 @@ src/execution_sim/
 ├── impact.py            closed-form expected cost and variance
 ├── almgren_chriss.py    closed form, Thomas solution, kappa, half-life
 ├── schedules.py         immediate, TWAP, VWAP, POV, the algorithm registry
-├── book.py              finite-depth ladder and level consumption
+├── book.py              finite-depth ladder, running book and level consumption
 ├── volume.py            synthetic U-shaped intraday volume
 ├── engine.py            Monte Carlo simulator
 ├── frontier.py          cost-risk frontier and the price of risk
@@ -241,8 +337,9 @@ figures/                 the generated figures
 * **Linear impact for the analytics.** The closed form assumes linear permanent and
   temporary impact and no drift. With a drift the Almgren-Chriss schedule is a
   plug-in rule, not the exact optimum.
-* **A static book that refills.** Liquidity is not depleted across intervals, queue
-  position is ignored, and the ladder shape is fixed.
+* **The book has no memory of queues.** Liquidity can be depleted and replenished
+  (`LiquidityModel`), but there is no queue position, no transient impact decay, and
+  replenishment is exogenous: it does not react to prices or to volatility.
 * **Gaussian prices.** No jumps, no stochastic volatility, no cross-impact between
   assets.
 * **Risk is measured as variance**, so the model is symmetric and risk-neutral in the

@@ -198,3 +198,40 @@ as one block.
 
 The book is refilled after every interval. Intraday liquidity depletion, queue
 position and transient impact decay are out of scope.
+
+## 10. The running book
+
+The ladder can be depleted. Let `available_j` be the size still displayed at level
+`j`. A child order consumes it from the touch downwards, and at the end of every
+interval it is restored by
+
+```
+available_j  <-  available_j + refill * (L_j − available_j)
+```
+
+so `refill = 1` is the static book of the reference experiment and `refill = 0` never
+restores anything. If a child order is larger than the total available depth, the
+remaining shares are priced by continuing the ladder: one more tick per virtual
+level, with the size of the deepest level.
+
+### Path independence
+
+With `refill = 0` the book is a fixed supply curve: level `j` offers `L_j` shares at
+price `s + j·Δ`, and once those shares are gone they are gone. Let `C(q)` be the cost
+of taking `q` shares off the curve and `Q_k = q_1 + ... + q_k` the cumulative
+quantity. The total temporary cost of a schedule is
+
+```
+Σ_k [C(Q_k) − C(Q_{k−1})] = C(Q_N)
+```
+
+The sum telescopes. The cost of a static ladder is therefore independent of the
+slicing: twenty child orders cost exactly what one block costs. Only the permanent
+impact term of the objective depends on the schedule, and it is smallest for the
+block. That is why immediate execution wins outright when the book never refills, and
+why the entire value of slicing comes from replenishment.
+
+At intermediate refill the invariance breaks and the ranking depends on the shape of
+the schedule: an aggressive schedule consumes the cheap levels first, which makes its
+own later children expensive, while a passive schedule keeps paying mid-depth prices
+for longer. The simulator reports the whole curve rather than a single number.
