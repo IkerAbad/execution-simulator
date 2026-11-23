@@ -1,0 +1,932 @@
+{
+  "settings": {
+    "order size (shares)": "100,000",
+    "notional (currency)": "5,000,000",
+    "horizon (days)": "1",
+    "intervals": "20",
+    "tau (days)": "0.05",
+    "price": "50",
+    "sigma (per sqrt(day))": "1",
+    "gamma (per share)": "2e-07",
+    "eta (per share per day)": "8.04e-08",
+    "half spread (bps)": "1",
+    "risk aversion": "1e-06",
+    "kappa (1/day)": "3.6368",
+    "daily volume (shares)": "2,000,000",
+    "book levels": "300",
+    "book capacity (shares)": "190,192",
+    "simulated paths": "20,000"
+  },
+  "algorithms": [
+    {
+      "name": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0,
+      "objective_bps": 33.16000000000001,
+      "excess_objective_bps": 25.13781813346647,
+      "first_interval_pct": 100.0,
+      "half_life_days": 0.025,
+      "completion_days": 0.05
+    },
+    {
+      "name": "TWAP",
+      "expected_bps": 4.508,
+      "sd_bps": 111.13055385446435,
+      "objective_bps": 10.682999999999998,
+      "excess_objective_bps": 2.6608181334664622,
+      "first_interval_pct": 5.0,
+      "half_life_days": 0.5,
+      "completion_days": 1.0
+    },
+    {
+      "name": "VWAP",
+      "expected_bps": 4.640593136482236,
+      "sd_bps": 107.50001926254781,
+      "objective_bps": 10.418720207206313,
+      "excess_objective_bps": 2.396538340672774,
+      "first_interval_pct": 7.852376980817347,
+      "half_life_days": 0.5000000000000002,
+      "completion_days": 1.0
+    },
+    {
+      "name": "POV",
+      "expected_bps": 5.233661583220936,
+      "sd_bps": 80.3890669016311,
+      "objective_bps": 8.464862621878396,
+      "excess_objective_bps": 0.44268075534485796,
+      "first_interval_pct": 11.77856547122602,
+      "half_life_days": 0.27388942154042833,
+      "completion_days": 0.75
+    },
+    {
+      "name": "Almgren-Chriss",
+      "expected_bps": 5.766176528051428,
+      "sd_bps": 67.17150197043549,
+      "objective_bps": 8.022181866533538,
+      "excess_objective_bps": 0.0,
+      "first_interval_pct": 16.651796639700088,
+      "half_life_days": 0.1907329363649557,
+      "completion_days": 1.0
+    }
+  ],
+  "ladder": [
+    {
+      "risk_aversion": 0.0,
+      "expected_twap_bps": 4.508,
+      "expected_ac_bps": 4.508000000000001,
+      "delta_expected_bps": 9.094947017729283e-16,
+      "sd_twap_bps": 111.13055385446435,
+      "sd_ac_bps": 111.13055385446435,
+      "delta_sd_bps": 0.0,
+      "objective_twap_bps": 4.508,
+      "objective_ac_bps": 4.508000000000001,
+      "objective_reduction_pct": -2.220446049250313e-14
+    },
+    {
+      "risk_aversion": 1e-07,
+      "expected_twap_bps": 4.508,
+      "expected_ac_bps": 4.554384261994507,
+      "delta_expected_bps": 0.04638426199450714,
+      "sd_twap_bps": 111.13055385446435,
+      "sd_ac_bps": 101.87520144682509,
+      "delta_sd_bps": -9.255352407639263,
+      "objective_twap_bps": 5.1255,
+      "objective_ac_bps": 5.0733120954860675,
+      "objective_reduction_pct": 1.0182012391753648
+    },
+    {
+      "risk_aversion": 1e-06,
+      "expected_twap_bps": 4.508,
+      "expected_ac_bps": 5.766176528051428,
+      "delta_expected_bps": 1.2581765280514283,
+      "sd_twap_bps": 111.13055385446435,
+      "sd_ac_bps": 67.17150197043549,
+      "delta_sd_bps": -43.95905188402886,
+      "objective_twap_bps": 10.682999999999998,
+      "objective_ac_bps": 8.022181866533538,
+      "objective_reduction_pct": 24.907031109861112
+    },
+    {
+      "risk_aversion": 1e-05,
+      "expected_twap_bps": 4.508,
+      "expected_ac_bps": 11.344364259833519,
+      "delta_expected_bps": 6.83636425983352,
+      "sd_twap_bps": 111.13055385446435,
+      "sd_ac_bps": 30.749678552653894,
+      "delta_sd_bps": -80.38087530181045,
+      "objective_twap_bps": 66.25800000000001,
+      "objective_ac_bps": 16.072077915291235,
+      "objective_reduction_pct": 75.74318887486609
+    },
+    {
+      "risk_aversion": 0.0001,
+      "expected_twap_bps": 4.508,
+      "expected_ac_bps": 23.30435569141534,
+      "delta_expected_bps": 18.79635569141534,
+      "sd_twap_bps": 111.13055385446435,
+      "sd_ac_bps": 8.905529539666052,
+      "delta_sd_bps": -102.2250243147983,
+      "objective_twap_bps": 622.0080000000002,
+      "objective_ac_bps": 27.269778510508573,
+      "objective_reduction_pct": 95.61584762406456
+    }
+  ],
+  "validation": [
+    {
+      "algorithm": "Immediate",
+      "analytic_expected_bps": 33.16000000000001,
+      "simulated_expected_bps": 33.16000000000001,
+      "analytic_sd_bps": 0.0,
+      "simulated_sd_bps": 0.0,
+      "expected_z_score": 0.0,
+      "sd_error_pct": 0.0
+    },
+    {
+      "algorithm": "TWAP",
+      "analytic_expected_bps": 4.508,
+      "simulated_expected_bps": 4.192923816981265,
+      "analytic_sd_bps": 111.13055385446435,
+      "simulated_sd_bps": 111.84489459805303,
+      "expected_z_score": -0.398395485826314,
+      "sd_error_pct": 0.6427941900876205
+    },
+    {
+      "algorithm": "VWAP",
+      "analytic_expected_bps": 4.640593136482236,
+      "simulated_expected_bps": 3.239463563195002,
+      "analytic_sd_bps": 107.50001926254781,
+      "simulated_sd_bps": 107.2621066452372,
+      "expected_z_score": -1.84734060066386,
+      "sd_error_pct": -0.2213140229580467
+    },
+    {
+      "algorithm": "POV",
+      "analytic_expected_bps": 5.233661583220936,
+      "simulated_expected_bps": 5.281313618479788,
+      "analytic_sd_bps": 80.3890669016311,
+      "simulated_sd_bps": 80.52711942408145,
+      "expected_z_score": 0.08368628484380745,
+      "sd_error_pct": 0.17173047003928377
+    },
+    {
+      "algorithm": "Almgren-Chriss",
+      "analytic_expected_bps": 5.766176528051428,
+      "simulated_expected_bps": 6.1587027710184294,
+      "analytic_sd_bps": 67.17150197043549,
+      "simulated_sd_bps": 66.69692523714026,
+      "expected_z_score": 0.8322961432143692,
+      "sd_error_pct": -0.7065149942666399
+    }
+  ],
+  "price_of_risk": {
+    "baseline_expected_bps": 4.508,
+    "baseline_sd_bps": 111.13055385446435,
+    "extra_cost_bps": 1.0,
+    "sd_after_bps": 71.32713253954364,
+    "sd_reduction_bps": 39.80342131492071,
+    "cost_per_sd_bp": 0.025123468459861766,
+    "lambda": 8.035917986692388e-07,
+    "kappa": 3.261002289466744
+  },
+  "impact": [
+    {
+      "scenario": "eta x0.5 / gamma x0.5",
+      "algorithm": "Immediate",
+      "expected_bps": 17.080000000000002,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x0.5 / gamma x0.5",
+      "algorithm": "TWAP",
+      "expected_bps": 2.7540000000000004,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x0.5 / gamma x0.5",
+      "algorithm": "VWAP",
+      "expected_bps": 2.820296568241118,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x0.5 / gamma x0.5",
+      "algorithm": "POV",
+      "expected_bps": 3.116830791610468,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x0.5 / gamma x0.5",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 3.927268031721899,
+      "sd_bps": 54.55927314819849
+    },
+    {
+      "scenario": "eta x0.5 / gamma x1",
+      "algorithm": "Immediate",
+      "expected_bps": 17.080000000000002,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x0.5 / gamma x1",
+      "algorithm": "TWAP",
+      "expected_bps": 3.704,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x0.5 / gamma x1",
+      "algorithm": "VWAP",
+      "expected_bps": 3.765900244087198,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x0.5 / gamma x1",
+      "algorithm": "POV",
+      "expected_bps": 4.042770394288819,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x0.5 / gamma x1",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 4.860787077279216,
+      "sd_bps": 53.383421924327855
+    },
+    {
+      "scenario": "eta x0.5 / gamma x2",
+      "algorithm": "Immediate",
+      "expected_bps": 17.080000000000002,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x0.5 / gamma x2",
+      "algorithm": "TWAP",
+      "expected_bps": 5.603999999999999,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x0.5 / gamma x2",
+      "algorithm": "VWAP",
+      "expected_bps": 5.657107595779356,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x0.5 / gamma x2",
+      "algorithm": "POV",
+      "expected_bps": 5.894649599645521,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x0.5 / gamma x2",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 6.720560498157911,
+      "sd_bps": 50.81186534682326
+    },
+    {
+      "scenario": "eta x1 / gamma x0.5",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x1 / gamma x0.5",
+      "algorithm": "TWAP",
+      "expected_bps": 3.558,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x1 / gamma x0.5",
+      "algorithm": "VWAP",
+      "expected_bps": 3.694989460636157,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x1 / gamma x0.5",
+      "algorithm": "POV",
+      "expected_bps": 4.307721980542585,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x1 / gamma x0.5",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 4.81551713012563,
+      "sd_bps": 67.78931100585056
+    },
+    {
+      "scenario": "eta x1 / gamma x1",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x1 / gamma x1",
+      "algorithm": "TWAP",
+      "expected_bps": 4.508,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x1 / gamma x1",
+      "algorithm": "VWAP",
+      "expected_bps": 4.640593136482236,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x1 / gamma x1",
+      "algorithm": "POV",
+      "expected_bps": 5.233661583220936,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x1 / gamma x1",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 5.766176528051428,
+      "sd_bps": 67.17150197043549
+    },
+    {
+      "scenario": "eta x1 / gamma x2",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x1 / gamma x2",
+      "algorithm": "TWAP",
+      "expected_bps": 6.4079999999999995,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x1 / gamma x2",
+      "algorithm": "VWAP",
+      "expected_bps": 6.531800488174395,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x1 / gamma x2",
+      "algorithm": "POV",
+      "expected_bps": 7.085540788577639,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x1 / gamma x2",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 7.666010824916999,
+      "sd_bps": 65.87619077326745
+    },
+    {
+      "scenario": "eta x2 / gamma x0.5",
+      "algorithm": "Immediate",
+      "expected_bps": 65.32000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x2 / gamma x0.5",
+      "algorithm": "TWAP",
+      "expected_bps": 5.1659999999999995,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x2 / gamma x0.5",
+      "algorithm": "VWAP",
+      "expected_bps": 5.444375245426234,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x2 / gamma x0.5",
+      "algorithm": "POV",
+      "expected_bps": 6.689504358406818,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x2 / gamma x0.5",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 6.290242609313884,
+      "sd_bps": 81.09850812504916
+    },
+    {
+      "scenario": "eta x2 / gamma x1",
+      "algorithm": "Immediate",
+      "expected_bps": 65.32000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x2 / gamma x1",
+      "algorithm": "TWAP",
+      "expected_bps": 6.1160000000000005,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x2 / gamma x1",
+      "algorithm": "VWAP",
+      "expected_bps": 6.389978921272314,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x2 / gamma x1",
+      "algorithm": "POV",
+      "expected_bps": 7.6154439610851705,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x2 / gamma x1",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 7.245538501184538,
+      "sd_bps": 80.81149939613374
+    },
+    {
+      "scenario": "eta x2 / gamma x2",
+      "algorithm": "Immediate",
+      "expected_bps": 65.32000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "eta x2 / gamma x2",
+      "algorithm": "TWAP",
+      "expected_bps": 8.016,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "eta x2 / gamma x2",
+      "algorithm": "VWAP",
+      "expected_bps": 8.281186272964472,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "eta x2 / gamma x2",
+      "algorithm": "POV",
+      "expected_bps": 9.467323166441872,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "eta x2 / gamma x2",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 9.156108430017053,
+      "sd_bps": 80.22046878393628
+    }
+  ],
+  "volatility": [
+    [
+      "sigma x0.5",
+      [
+        [
+          4.508000000000001,
+          55.565276927232176
+        ],
+        [
+          4.508036493973841,
+          55.43355750581855
+        ],
+        [
+          4.508091331254155,
+          55.35694823122311
+        ],
+        [
+          4.508228080294998,
+          55.236178881292766
+        ],
+        [
+          4.508567665679327,
+          55.04638357340391
+        ],
+        [
+          4.509405412217248,
+          54.74955934524161
+        ],
+        [
+          4.511450980842182,
+          54.28886877783532
+        ],
+        [
+          4.516367067134085,
+          53.58222546560648
+        ],
+        [
+          4.527899436828561,
+          52.517688177177995
+        ],
+        [
+          4.553994402289913,
+          50.956776686075976
+        ],
+        [
+          4.610048850213213,
+          48.75635622499255
+        ],
+        [
+          4.722161250408404,
+          45.819673146006494
+        ],
+        [
+          4.926829587663124,
+          42.169966518023685
+        ],
+        [
+          5.263076656178569,
+          38.00033397907563
+        ],
+        [
+          5.760156993792056,
+          33.63063457732039
+        ],
+        [
+          6.433971795940127,
+          29.369354449489556
+        ],
+        [
+          7.298486069029339,
+          25.394972679447864
+        ],
+        [
+          8.378310802589901,
+          21.754444536925064
+        ],
+        [
+          9.70867931204871,
+          18.43266572068701
+        ],
+        [
+          11.326105865546838,
+          15.40456978892142
+        ],
+        [
+          13.255857439937044,
+          12.65309660387717
+        ],
+        [
+          15.495711980802888,
+          10.173138849232641
+        ]
+      ]
+    ],
+    [
+      "sigma x1",
+      [
+        [
+          4.508000000000001,
+          111.13055385446435
+        ],
+        [
+          4.508573008793325,
+          110.08790224529415
+        ],
+        [
+          4.509418544696557,
+          109.49153326464955
+        ],
+        [
+          4.511482862439187,
+          108.56601960772342
+        ],
+        [
+          4.516443009143531,
+          107.14660675962747
+        ],
+        [
+          4.5280751990593,
+          105.00878907607421
+        ],
+        [
+          4.554384261994507,
+          101.87520144682509
+        ],
+        [
+          4.610862896540218,
+          97.45990019980162
+        ],
+        [
+          4.723728590076722,
+          91.57106962874283
+        ],
+        [
+          4.929559844354058,
+          84.2583857045733
+        ],
+        [
+          5.267339792241712,
+          75.91150256472923
+        ],
+        [
+          5.766176528051428,
+          67.17150197043549
+        ],
+        [
+          6.441873604624229,
+          58.65356629039246
+        ],
+        [
+          7.308457063031692,
+          50.71154355615291
+        ],
+        [
+          8.390671049254811,
+          43.437301670902244
+        ],
+        [
+          9.72381787870055,
+          36.800036212512666
+        ],
+        [
+          11.344364259833519,
+          30.749678552653894
+        ],
+        [
+          13.277384850588225,
+          25.252334303771978
+        ],
+        [
+          15.520274460924961,
+          20.298046004402465
+        ],
+        [
+          18.02313279141327,
+          15.901023577879025
+        ],
+        [
+          20.673986638947653,
+          12.092772085353399
+        ],
+        [
+          23.30435569141534,
+          8.905529539666052
+        ]
+      ]
+    ],
+    [
+      "sigma x1.5",
+      [
+        [
+          4.508000000000001,
+          166.6958307816965
+        ],
+        [
+          4.510812463902356,
+          163.23762847263322
+        ],
+        [
+          4.514842140817316,
+          161.31280608482317
+        ],
+        [
+          4.524356214499176,
+          158.3991402536437
+        ],
+        [
+          4.546089922344591,
+          154.0962352810646
+        ],
+        [
+          4.59341101667514,
+          147.96783497313643
+        ],
+        [
+          4.689789495411586,
+          139.67359380209385
+        ],
+        [
+          4.869732707431505,
+          129.18167470966443
+        ],
+        [
+          5.172772730372958,
+          116.95343214086459
+        ],
+        [
+          5.631265142811515,
+          103.89114576313112
+        ],
+        [
+          6.263606103779549,
+          90.96878020435572
+        ],
+        [
+          7.08280576836454,
+          78.82494393947127
+        ],
+        [
+          8.110531369072822,
+          67.67488277550696
+        ],
+        [
+          9.380220314897018,
+          57.49772079797475
+        ],
+        [
+          10.929109984054854,
+          48.217559206473894
+        ],
+        [
+          12.78630610863454,
+          39.77598757761781
+        ],
+        [
+          14.957546813914693,
+          32.14914818785216
+        ],
+        [
+          17.405985480278876,
+          25.350139155646723
+        ],
+        [
+          20.03502959957211,
+          19.42171062414816
+        ],
+        [
+          22.687549409048795,
+          14.414948068359319
+        ],
+        [
+          25.175364545484356,
+          10.355720049289344
+        ],
+        [
+          27.33383719124357,
+          7.213365031761223
+        ]
+      ]
+    ],
+    [
+      "sigma x2",
+      [
+        [
+          4.508000000000001,
+          222.2611077089287
+        ],
+        [
+          4.516519623155595,
+          214.25737376711717
+        ],
+        [
+          4.528252452675783,
+          209.96419261548968
+        ],
+        [
+          4.554777223681658,
+          203.67342556727195
+        ],
+        [
+          4.611682822970451,
+          194.8138588954998
+        ],
+        [
+          4.725305763122576,
+          183.00527731558793
+        ],
+        [
+          4.932304198323286,
+          168.35345229456863
+        ],
+        [
+          5.2716201556900675,
+          151.6445914997803
+        ],
+        [
+          5.772214841808684,
+          134.16352202591406
+        ],
+        [
+          6.449795549523685,
+          117.13697454710612
+        ],
+        [
+          7.318450829017394,
+          101.26642719218367
+        ],
+        [
+          8.403057905183767,
+          86.73156384727339
+        ],
+        [
+          9.738987031192814,
+          73.46960616107408
+        ],
+        [
+          11.362656043342092,
+          61.38055195819978
+        ],
+        [
+          13.298945556945736,
+          50.39706558077411
+        ],
+        [
+          15.54486509394581,
+          40.49974652940289
+        ],
+        [
+          18.04993017945181,
+          31.71747146337269
+        ],
+        [
+          20.701507828087934,
+          24.113468390132653
+        ],
+        [
+          23.330674216696835,
+          17.751995053498078
+        ],
+        [
+          25.74956909099499,
+          12.65191321587885
+        ],
+        [
+          27.808103424993607,
+          8.750044454635297
+        ],
+        [
+          29.4358066760948,
+          5.898414151501708
+        ]
+      ]
+    ]
+  ],
+  "drift": [
+    {
+      "scenario": "drift -20.0 bp/day",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "drift -20.0 bp/day",
+      "algorithm": "TWAP",
+      "expected_bps": 14.008000000000001,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "drift -20.0 bp/day",
+      "algorithm": "VWAP",
+      "expected_bps": 14.140593136482236,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "drift -20.0 bp/day",
+      "algorithm": "POV",
+      "expected_bps": 10.964583184555384,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "drift -20.0 bp/day",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 10.497682342816308,
+      "sd_bps": 67.17150197043549
+    },
+    {
+      "scenario": "drift +0.0 bp/day",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "drift +0.0 bp/day",
+      "algorithm": "TWAP",
+      "expected_bps": 4.508,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "drift +0.0 bp/day",
+      "algorithm": "VWAP",
+      "expected_bps": 4.640593136482236,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "drift +0.0 bp/day",
+      "algorithm": "POV",
+      "expected_bps": 5.233661583220935,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "drift +0.0 bp/day",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 5.766176528051428,
+      "sd_bps": 67.17150197043549
+    },
+    {
+      "scenario": "drift +20.0 bp/day",
+      "algorithm": "Immediate",
+      "expected_bps": 33.16000000000001,
+      "sd_bps": 0.0
+    },
+    {
+      "scenario": "drift +20.0 bp/day",
+      "algorithm": "TWAP",
+      "expected_bps": -4.992,
+      "sd_bps": 111.13055385446435
+    },
+    {
+      "scenario": "drift +20.0 bp/day",
+      "algorithm": "VWAP",
+      "expected_bps": -4.859406863517764,
+      "sd_bps": 107.50001926254781
+    },
+    {
+      "scenario": "drift +20.0 bp/day",
+      "algorithm": "POV",
+      "expected_bps": -0.49726001811351217,
+      "sd_bps": 80.3890669016311
+    },
+    {
+      "scenario": "drift +20.0 bp/day",
+      "algorithm": "Almgren-Chriss",
+      "expected_bps": 1.0346707132865487,
+      "sd_bps": 67.17150197043549
+    }
+  ],
+  "book_gap_pct": 1.3303094140926436e-14,
+  "block_gap_pct": 84.15316055585112,
+  "derived_check_bps": 2.9103830456733705e-12
+}
