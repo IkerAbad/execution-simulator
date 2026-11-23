@@ -13,8 +13,9 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from execution_sim._typing import FloatArray
+from execution_sim.book import LevelBook, LiquidityModel
 from execution_sim.core import ExecutionProblem, MarketModel
-from execution_sim.engine import expected_execution_cost
+from execution_sim.engine import book_execution, expected_execution_cost
 from execution_sim.frontier import FrontierPoint, frontier
 from execution_sim.impact import cost_sd, expected_cost, to_bps
 from execution_sim.schedules import build_schedules
@@ -123,6 +124,64 @@ def drift_scenarios(
                     algorithm=name,
                     expected_bps=to_bps(problem, expected),
                     sd_bps=to_bps(problem, cost_sd(problem, trades)),
+                )
+            )
+    return rows
+
+
+@dataclass(frozen=True, slots=True)
+class RefillRow:
+    """One (refill, algorithm) cell of the running-book experiment."""
+
+    refill: float
+    algorithm: str
+    expected_bps: float
+    objective_bps: float
+    beyond_shares: float
+    beyond_pct: float
+    max_child_pct: float
+    depth_min_pct: float
+    exhausted_intervals: int
+
+
+def refill_scenarios(
+    problem: ExecutionProblem,
+    profile: VolumeProfile,
+    book: LevelBook,
+    *,
+    refills: FloatArray,
+    risk_aversion: float | None = None,
+) -> list[RefillRow]:
+    """Cost of every algorithm when the book is only partially replenished.
+
+    ``refill = 1`` is the static book of the reference experiment.  As the refill
+    falls the book is depleted by the schedule itself, so the same trade list costs
+    more and, eventually, part of it has to be executed beyond the visible depth.
+    The variance does not change: the schedule is the same and the book is
+    deterministic.
+    """
+    lam = problem.risk_aversion if risk_aversion is None else risk_aversion
+    schedules = build_schedules(problem, profile)
+    rows: list[RefillRow] = []
+    for refill in np.asarray(refills, dtype=float):
+        liquidity = LiquidityModel(refill=float(refill))
+        for name, trades in schedules.items():
+            execution = book_execution(problem, trades, book, liquidity)
+            expected = expected_execution_cost(problem, trades, book=book, liquidity=liquidity)
+            variance = cost_sd(problem, trades) ** 2
+            rows.append(
+                RefillRow(
+                    refill=float(refill),
+                    algorithm=name,
+                    expected_bps=to_bps(problem, expected),
+                    objective_bps=to_bps(problem, expected + lam * variance),
+                    beyond_shares=execution.beyond_total,
+                    beyond_pct=100.0 * execution.beyond_total / problem.size,
+                    max_child_pct=100.0 * execution.max_child_fraction,
+                    depth_min_pct=float(100.0 * execution.depth_after.min() / book.capacity)
+                    if execution.depth_after.size
+                    else 100.0,
+                    exhausted_intervals=execution.exhausted_intervals,
                 )
             )
     return rows

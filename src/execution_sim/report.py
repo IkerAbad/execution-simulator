@@ -15,17 +15,19 @@ from execution_sim.almgren_chriss import (
     numeric_optimal_trades,
     optimal_trades,
 )
-from execution_sim.book import LevelBook
+from execution_sim.book import LevelBook, LiquidityModel
 from execution_sim.core import ExecutionProblem
-from execution_sim.engine import simulate
+from execution_sim.engine import book_execution, simulate
 from execution_sim.frontier import lambda_for_cost_increase
 from execution_sim.impact import cost_sd, expected_cost, mean_variance, to_bps
 from execution_sim.scenario import default_book
 from execution_sim.schedules import build_schedules, completion_time
 from execution_sim.sensitivity import (
+    RefillRow,
     ScenarioRow,
     drift_scenarios,
     impact_scenarios,
+    refill_scenarios,
     volatility_curves,
 )
 from execution_sim.volume import VolumeProfile
@@ -69,6 +71,32 @@ class ValidationRow:
 
 
 @dataclass(frozen=True, slots=True)
+class BookRow:
+    """One algorithm under the static and the running book."""
+
+    algorithm: str
+    static_bps: float
+    dynamic_bps: float
+    delta_bps: float
+    delta_pct: float
+    max_child_pct: float
+    beyond_pct: float
+    depth_min_pct: float
+    exhausted_intervals: int
+
+
+@dataclass(frozen=True, slots=True)
+class ExtremeSummary:
+    """Stress test where a child order is larger than half the visible depth."""
+
+    size: float
+    n_intervals: int
+    refill: float
+    order_to_depth_pct: float
+    rows: list[BookRow]
+
+
+@dataclass(frozen=True, slots=True)
 class Report:
     settings: dict[str, str]
     algorithms: list[AlgorithmRow]
@@ -81,6 +109,11 @@ class Report:
     book_gap_pct: float
     block_gap_pct: float
     derived_check_bps: float
+    book_refill: float
+    book_rows: list[BookRow]
+    refill_curve: list[RefillRow]
+    temporary_spread_bps: float
+    extreme: ExtremeSummary
 
 
 def _algorithm_rows(
@@ -168,6 +201,9 @@ def build_report(
     n_paths: int = 20_000,
     seed: int = 0,
     ladder_risk_aversions: FloatArray | None = None,
+    book_refill: float = 0.25,
+    extreme_multiple: float = 2.5,
+    extreme_intervals: int = 4,
 ) -> Report:
     """Run every comparison that the README quotes."""
     profile = VolumeProfile() if profile is None else profile
@@ -198,6 +234,25 @@ def build_report(
 
     price_of_risk = _price_of_risk(problem)
 
+    refills = np.array([1.0, 0.8, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.0])
+    refill_curve = refill_scenarios(problem, profile, book, refills=refills)
+    book_rows = _pair_book_rows(refill_curve, book_refill, list(schedules))
+
+    stress = problem.with_changes(
+        size=extreme_multiple * problem.size,
+        n_intervals=extreme_intervals,
+    )
+    stress_curve = refill_scenarios(stress, profile, book, refills=np.array([1.0, book_refill]))
+    extreme_rows = _pair_book_rows(stress_curve, book_refill, list(schedules))
+    extreme = ExtremeSummary(
+        size=stress.size,
+        n_intervals=stress.n_intervals,
+        refill=book_refill,
+        order_to_depth_pct=100.0 * stress.size / book.capacity,
+        rows=extreme_rows,
+    )
+    temporary_spread = _temporary_spread_at_zero_refill(problem, schedules, book)
+
     settings = {
         "order size (shares)": f"{problem.size:,.0f}",
         "notional (currency)": f"{problem.notional:,.0f}",
@@ -214,6 +269,7 @@ def build_report(
         "daily volume (shares)": f"{profile.daily_volume:,.0f}",
         "book levels": f"{book.n_levels}",
         "book capacity (shares)": f"{book.capacity:,.0f}",
+        "book refill per interval": f"{book_refill:g}",
         "simulated paths": f"{n_paths:,}",
     }
 
@@ -238,7 +294,55 @@ def build_report(
         book_gap_pct=float(book_gap),
         block_gap_pct=float(block_gap),
         derived_check_bps=derived_check,
+        book_refill=book_refill,
+        book_rows=book_rows,
+        refill_curve=refill_curve,
+        temporary_spread_bps=float(temporary_spread),
+        extreme=extreme,
     )
+
+
+def _pair_book_rows(rows: list[RefillRow], refill: float, order: list[str]) -> list[BookRow]:
+    """Pair the static book (refill = 1) with one dynamic refill level."""
+    static = {row.algorithm: row for row in rows if row.refill == 1.0}
+    dynamic = {row.algorithm: row for row in rows if abs(row.refill - refill) < 1e-12}
+    paired: list[BookRow] = []
+    for name in order:
+        if name not in static or name not in dynamic:  # pragma: no cover - defensive
+            continue
+        before = static[name]
+        after = dynamic[name]
+        paired.append(
+            BookRow(
+                algorithm=name,
+                static_bps=before.expected_bps,
+                dynamic_bps=after.expected_bps,
+                delta_bps=after.expected_bps - before.expected_bps,
+                delta_pct=100.0 * (after.expected_bps / before.expected_bps - 1.0),
+                max_child_pct=after.max_child_pct,
+                beyond_pct=after.beyond_pct,
+                depth_min_pct=after.depth_min_pct,
+                exhausted_intervals=after.exhausted_intervals,
+            )
+        )
+    return paired
+
+
+def _temporary_spread_at_zero_refill(
+    problem: ExecutionProblem, schedules: dict[str, FloatArray], book: LevelBook
+) -> float:
+    """Spread of the temporary cost across schedules when the book never refills.
+
+    With a static ladder and no replenishment the total cost is path independent:
+    slicing an order into pieces costs exactly the same as sending it as a block.
+    Only the (discrete) permanent-impact term can differ.
+    """
+    zero = LiquidityModel(refill=0.0)
+    temporary = [
+        float(np.asarray(trades) @ book_execution(problem, trades, book, zero).slippages)
+        for trades in schedules.values()
+    ]
+    return max(temporary) - min(temporary)
 
 
 def _price_of_risk(problem: ExecutionProblem) -> dict[str, float]:
@@ -289,6 +393,56 @@ def to_markdown(report: Report) -> str:
             f"| {_numeric(algorithm.first_interval_pct, 1)} "
             f"| {_numeric(algorithm.half_life_days, 3)} "
             f"| {_numeric(algorithm.completion_days, 3)} |"
+        )
+
+    lines += ["", "## The book does not refill for free", ""]
+    lines.append(
+        f"Static book: refill = 1 (the ladder is restored every interval). Dynamic book: "
+        f"refill = {report.book_refill:g} per interval."
+    )
+    lines.append("")
+    lines.append(
+        "| Algorithm | E static (bp) | E dynamic (bp) | Delta (bp) | Delta (%) "
+        "| Max child / depth (%) | Beyond the book (%) | Min depth (%) |"
+    )
+    lines.append("|---|---|---|---|---|---|---|---|")
+    for book_row in report.book_rows:
+        lines.append(
+            f"| {book_row.algorithm} | {_numeric(book_row.static_bps, 3)} "
+            f"| {_numeric(book_row.dynamic_bps, 3)} | {_numeric(book_row.delta_bps, 3)} "
+            f"| {_numeric(book_row.delta_pct, 2)} "
+            f"| {_numeric(book_row.max_child_pct, 1)} "
+            f"| {_numeric(book_row.beyond_pct, 2)} "
+            f"| {_numeric(book_row.depth_min_pct, 1)} |"
+        )
+    lines += [
+        "",
+        f"With refill = 0 the temporary cost of the five schedules differs by "
+        f"{report.temporary_spread_bps:.2e} bp: a static ladder has no memory, so "
+        "slicing cannot buy liquidity.",
+        "",
+    ]
+
+    extreme = report.extreme
+    lines += ["", "## Extreme case: a child order larger than half the visible depth", ""]
+    lines.append(
+        f"Order of {extreme.size:,.0f} shares in {extreme.n_intervals} intervals "
+        f"({extreme.order_to_depth_pct:.1f}% of the visible depth), refill = {extreme.refill:g}."
+    )
+    lines.append("")
+    lines.append(
+        "| Algorithm | Max child / depth (%) | Beyond the book (%) | E static (bp) "
+        "| E dynamic (bp) | Delta (%) | Intervals exhausted |"
+    )
+    lines.append("|---|---|---|---|---|---|---|")
+    for extreme_row in extreme.rows:
+        lines.append(
+            f"| {extreme_row.algorithm} | {_numeric(extreme_row.max_child_pct, 1)} "
+            f"| {_numeric(extreme_row.beyond_pct, 2)} "
+            f"| {_numeric(extreme_row.static_bps, 2)} "
+            f"| {_numeric(extreme_row.dynamic_bps, 2)} "
+            f"| {_numeric(extreme_row.delta_pct, 2)} "
+            f"| {extreme_row.exhausted_intervals} |"
         )
 
     lines += ["", "## TWAP versus the optimal schedule", ""]

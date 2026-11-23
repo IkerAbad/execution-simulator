@@ -10,12 +10,13 @@ from matplotlib.figure import Figure
 
 from execution_sim._typing import FloatArray
 from execution_sim.almgren_chriss import optimal_trades
-from execution_sim.book import LevelBook
+from execution_sim.book import LevelBook, LiquidityModel
 from execution_sim.core import ExecutionProblem
+from execution_sim.engine import book_execution
 from execution_sim.frontier import lambda_for_cost_increase, point
 from execution_sim.impact import cost_sd, expected_cost, to_bps
 from execution_sim.schedules import build_schedules
-from execution_sim.sensitivity import impact_scenarios, volatility_curves
+from execution_sim.sensitivity import impact_scenarios, refill_scenarios, volatility_curves
 from execution_sim.volume import VolumeProfile
 
 COLORS = {
@@ -378,6 +379,130 @@ def risk_aversion(
     return _save(figure, path)
 
 
+def book_dynamics(
+    problem: ExecutionProblem,
+    profile: VolumeProfile,
+    book: LevelBook,
+    path: Path,
+    *,
+    refill: float = 0.25,
+    refill_grid: FloatArray | None = None,
+    extreme_multiple: float = 2.5,
+    extreme_intervals: int = 4,
+) -> Path:
+    """What changes when the book is depleted instead of restored every interval."""
+    grid = (
+        np.array([1.0, 0.8, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.0])
+        if refill_grid is None
+        else refill_grid
+    )
+    schedules = build_schedules(problem, profile)
+    names = list(schedules)
+    rows = refill_scenarios(problem, profile, book, refills=grid)
+
+    figure = Figure(figsize=(12.5, 8.2), layout="constrained")
+    axes = figure.subplots(2, 2)
+
+    ax = axes[0, 0]
+    liquidity = LiquidityModel(refill=refill)
+    time_pct = problem.times[1:] / problem.horizon * 100.0
+    for name, trades in schedules.items():
+        execution = book_execution(problem, trades, book, liquidity)
+        ax.plot(
+            time_pct,
+            execution.depth_after / book.capacity * 100.0,
+            color=COLORS[name],
+            linewidth=2.0,
+            marker=MARKERS[name],
+            markersize=4,
+            label=LABELS[name],
+        )
+    ax.set_xlabel("Time (% of the horizon)")
+    ax.set_ylabel("Visible depth (% of the initial ladder)")
+    ax.set_title(f"(a) Depth left after each child order (refill {refill:g})")
+    ax.legend(frameon=False, fontsize=8)
+    _style(ax)
+
+    ax = axes[0, 1]
+    lookup = {(row.refill, row.algorithm): row for row in rows}
+    for name in names:
+        values = [lookup[(float(r), name)].expected_bps for r in grid]
+        ax.plot(
+            grid, values, color=COLORS[name], marker=MARKERS[name], markersize=4, label=LABELS[name]
+        )
+    ax.set_xlim(1.02, -0.02)
+    ax.set_yscale("log")
+    ax.set_xlabel("Refill per interval (1 = static book, 0 = never refilled)")
+    ax.set_ylabel("Expected cost (bp, log scale)")
+    ax.set_title("(b) Cost against replenishment")
+    ax.legend(frameon=False, fontsize=8, loc="center left")
+    _style(ax)
+
+    ax = axes[1, 0]
+    for name in ("TWAP", "VWAP", "POV"):
+        gaps = [
+            100.0
+            * (
+                lookup[(float(r), name)].objective_bps
+                / lookup[(float(r), "Almgren-Chriss")].objective_bps
+                - 1.0
+            )
+            for r in grid
+        ]
+        ax.plot(
+            grid, gaps, color=COLORS[name], marker=MARKERS[name], markersize=4, label=LABELS[name]
+        )
+    ax.axhline(0.0, color=COLORS["Almgren-Chriss"], linewidth=1.4)
+    ax.annotate(
+        "Almgren-Chriss",
+        xy=(0.5, 0.0),
+        xytext=(0, 6),
+        textcoords="offset points",
+        fontsize=8,
+        color=COLORS["Almgren-Chriss"],
+    )
+    ax.set_xlim(1.02, -0.02)
+    ax.set_xlabel("Refill per interval")
+    ax.set_ylabel("Mean-variance cost above AC (%)")
+    ax.set_title("(c) Does the optimal schedule survive depletion?")
+    ax.legend(frameon=False, fontsize=8)
+    _style(ax)
+
+    ax = axes[1, 1]
+    stress = problem.with_changes(
+        size=extreme_multiple * problem.size, n_intervals=extreme_intervals
+    )
+    stress_rows = refill_scenarios(stress, profile, book, refills=np.array([refill]))
+    positions = np.arange(len(names))
+    heights = [
+        next(row for row in stress_rows if row.algorithm == name).max_child_pct for name in names
+    ]
+    colors = [COLORS[name] for name in names]
+    ax.barh(positions, heights, color=colors, height=0.55)
+    ax.axvline(50.0, color="#c0392b", linestyle="--", linewidth=1.2, label="Half the visible depth")
+    beyond = {row.algorithm: row.beyond_pct for row in stress_rows}
+    for position, name in zip(positions, names, strict=True):
+        if beyond[name] > 0.0:
+            ax.annotate(
+                f"{beyond[name]:.1f}% beyond the book",
+                xy=(heights[position], position),
+                xytext=(6, 0),
+                textcoords="offset points",
+                fontsize=8,
+                color="#c0392b",
+                verticalalignment="center",
+            )
+    ax.set_xlim(0.0, max(heights) * 1.22)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.set_yticks(positions, [LABELS[name] for name in names])
+    ax.invert_yaxis()
+    ax.set_xlabel("Largest child order (% of the depth available at that moment)")
+    ax.set_title(f"(d) {stress.size:,.0f} shares in {stress.n_intervals} intervals")
+    _style(ax)
+
+    return _save(figure, path)
+
+
 def build_all(
     problem: ExecutionProblem,
     profile: VolumeProfile,
@@ -392,4 +517,5 @@ def build_all(
         sensitivity_volatility(problem, directory / "sensitivity_volatility.png"),
         sensitivity_impact(problem, profile, directory / "sensitivity_impact.png"),
         risk_aversion(problem, directory / "risk_aversion.png"),
+        book_dynamics(problem, profile, book, directory / "book_dynamics.png"),
     ]

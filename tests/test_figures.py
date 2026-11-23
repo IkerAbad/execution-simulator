@@ -17,6 +17,7 @@ EXPECTED = {
     "sensitivity_volatility.png",
     "sensitivity_impact.png",
     "risk_aversion.png",
+    "book_dynamics.png",
 }
 
 

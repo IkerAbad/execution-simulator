@@ -19,6 +19,7 @@
 | daily volume (shares) | 2,000,000 |
 | book levels | 300 |
 | book capacity (shares) | 190,192 |
+| book refill per interval | 0.25 |
 | simulated paths | 20,000 |
 
 ## Algorithms
@@ -30,6 +31,33 @@
 | VWAP | 4.641 | 107.500 | 10.419 | 2.397 | 7.9 | 0.500 | 1.000 |
 | POV | 5.234 | 80.389 | 8.465 | 0.443 | 11.8 | 0.274 | 0.750 |
 | Almgren-Chriss | 5.766 | 67.172 | 8.022 | 0.000 | 16.7 | 0.191 | 1.000 |
+
+## The book does not refill for free
+
+Static book: refill = 1 (the ladder is restored every interval). Dynamic book: refill = 0.25 per interval.
+
+| Algorithm | E static (bp) | E dynamic (bp) | Delta (bp) | Delta (%) | Max child / depth (%) | Beyond the book (%) | Min depth (%) |
+|---|---|---|---|---|---|---|---|
+| Immediate | 61.065 | 61.065 | 0.000 | 0.00 | 52.6 | 0.00 | 47.4 |
+| TWAP | 4.508 | 11.317 | 6.809 | 151.03 | 2.9 | 0.00 | 89.5 |
+| VWAP | 4.686 | 11.332 | 6.646 | 141.84 | 4.5 | 0.00 | 87.4 |
+| POV | 5.640 | 13.794 | 8.154 | 144.57 | 6.2 | 0.00 | 85.9 |
+| Almgren-Chriss | 6.542 | 14.743 | 8.202 | 125.38 | 8.8 | 0.00 | 82.5 |
+
+With refill = 0 the temporary cost of the five schedules differs by 4.00e-11 bp: a static ladder has no memory, so slicing cannot buy liquidity.
+
+
+## Extreme case: a child order larger than half the visible depth
+
+Order of 250,000 shares in 4 intervals (131.4% of the visible depth), refill = 0.25.
+
+| Algorithm | Max child / depth (%) | Beyond the book (%) | E static (bp) | E dynamic (bp) | Delta (%) | Intervals exhausted |
+|---|---|---|---|---|---|---|
+| Immediate | 131.4 | 23.92 | 415.81 | 415.81 | 0.00 | 1 |
+| TWAP | 76.4 | 0.00 | 38.72 | 119.42 | 208.45 | 0 |
+| VWAP | 81.7 | 0.00 | 41.59 | 118.57 | 185.10 | 0 |
+| POV | 87.3 | 0.00 | 58.52 | 139.08 | 137.65 | 0 |
+| Almgren-Chriss | 84.0 | 0.00 | 87.20 | 129.95 | 49.03 | 0 |
 
 ## TWAP versus the optimal schedule
 
