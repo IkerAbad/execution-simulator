@@ -75,7 +75,7 @@ def test_book_is_calibrated_at_the_mean_chunk_and_convex_beyond(
 
 def test_capacity_is_enforced() -> None:
     book = LevelBook(level_size=100.0, decay=1.0, n_levels=3)
-    with pytest.raises(InsufficientDepthError, match="capacity"):
+    with pytest.raises(InsufficientDepthError, match="exceeds"):
         book.walk(301.0)
 
 
