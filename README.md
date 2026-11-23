@@ -1,6 +1,8 @@
 # execution-simulator
 
 [![CI](https://github.com/IkerAbad/execution-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/IkerAbad/execution-simulator/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/execution-simulator.svg)](https://pypi.org/project/execution-simulator/)
+[![Release](https://img.shields.io/github/v/release/IkerAbad/execution-simulator?display_name=tag)](https://github.com/IkerAbad/execution-simulator/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
